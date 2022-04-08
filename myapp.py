@@ -11,7 +11,7 @@ import json_loader
 # AVG_CAR_HEIGHT = 150
 # AVG_BIKE_HEIGHT = 55 # INCH 120 distance 
 TEST_VIDEO_PATH = "../test videos/103.mp4"
-CONFIG_FILE_PATH = "default_config.json"
+CONFIG_FILE_PATH = "config.json"
 # CONFIDENCE = 0.4
 # BOTTLE_HEIGHT = 15 #INCH
 # OBJECT_MEASURED_DISTANCE = 24 #INCH
