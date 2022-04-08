@@ -1,0 +1,20 @@
+{
+"avg_heights":{
+    "car":null,
+    "bike":null,
+    "bottle":null
+    },
+"object_measured_distance":null,
+"focal_length":null,
+"thresholds":[{
+    "emergency_braking":{
+        "distance":null,
+        "speed":null
+    },
+    "alert":{
+        "distance":null,
+        "speed": null
+    }
+    }],
+    "confidence":null
+}
