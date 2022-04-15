@@ -38,7 +38,7 @@ def get_config(file_name):
     TEST_IMAGE_WIDTH = config['img_width']
     TEST_IMAGE_HEIGHT = config['img_height']
     AVG_CAR_WIDTH = config['avg_width']['car']
-    ROI_OFFSET_DISTANCE = 0 # inch
+    ROI_OFFSET_DISTANCE = -12 # inch
 
 # def find_ROI(width, height, distance): 
 #     """takes shape of the frame and returns the coordinate of ROI"""
@@ -57,21 +57,29 @@ def get_config(file_name):
 
 #     return bbox
 
+# def get_min_distance_traffic_obj(traffic_objs):
+#     min_distance = 1000 
+#     for obj in traffic_objs:
+#         for name, param in obj.items():
+#             if param["distance"] < min_distance:
+#                 min_distance = param["distance"]
+#     return min_distance 
 
 def find_ROI(f_width, f_height, traffic_objs):
-    distance = get_min_distance_traffic_obj(traffic_objs)
-    print("distance", distance)
-    distance = distance + ROI_OFFSET_DISTANCE
-    roi_pix_width = FOCAL_LENGTH * AVG_CAR_WIDTH / distance 
-  
-    center_x = f_width//2
+    bboxes = {}
+    for obj in traffic_objs:
+        for _ , param in obj.items():
+            
+            distance = param["distance"] + ROI_OFFSET_DISTANCE
+            roi_pix_width = FOCAL_LENGTH * AVG_CAR_WIDTH / distance 
+        
+            center_x = f_width//2
+            roi_x1 = center_x - roi_pix_width//2
 
-    print(f"center_x {center_x} roi width {roi_pix_width}")
-    roi_x1 = center_x - roi_pix_width//2
-    
+            bbox = int(roi_x1), 0 , int(roi_pix_width), f_height
+            bboxes[param["distance"]] = bbox
 
-    bbox = int(roi_x1), 0 , int(roi_pix_width), f_height
-    return bbox
+    return bboxes
 
 
 
@@ -83,7 +91,11 @@ def find_ROI(f_width, f_height, traffic_objs):
 
 
 def plot_ROI(bbox,frame):
-    x, y, w, h = bbox[0], bbox[1], bbox[2], bbox[3]
+    # plot only the nearest bbox
+    distances = [key for key in bbox.keys()]
+    min_dist = sorted(distances)[0]
+
+    x, y, w, h = bbox[min_dist][0], bbox[min_dist][1], bbox[min_dist][2], bbox[min_dist][3]
   
     shapes = np.zeros_like(frame, np.uint8)
 
@@ -118,13 +130,6 @@ def plot_bounding_box(frame, results, class_names):
     return frame
 
 
-def get_min_distance_traffic_obj(traffic_objs):
-    min_distance = 1000 
-    for obj in traffic_objs:
-        for name, param in obj.items():
-            if param["distance"] < min_distance:
-                min_distance = param["distance"]
-    return min_distance 
 
 
 def get_traffic_object_info(frame_shape, results, class_names):
@@ -156,11 +161,11 @@ def trigger_braking_signal(traffic_objs, roi_bbox):
         for name, param in obj.items():
             if param['distance'] <= BRAKING_DISTANCE:
                 print("distance",param['distance'])
-                condition_first = param['x_left_pos'] >= roi_bbox[0] and param['x_left_pos'] <= roi_bbox[2]
-                condition_second = param['x_right_pos'] >= roi_bbox[0] and param['x_right_pos'] <= roi_bbox[2]
-                condition_third =param['x_left_pos'] <= roi_bbox[0] and param['x_right_pos'] >= roi_bbox[2]
+                condition_first = param['x_left_pos'] >= roi_bbox[param['distance']][0] and param['x_left_pos'] <= roi_bbox[param['distance']][2]
+                condition_second = param['x_right_pos'] >= roi_bbox[param['distance']][0] and param['x_right_pos'] <= roi_bbox[param['distance']][2]
+                condition_third =param['x_left_pos'] <= roi_bbox[param['distance']][0] and param['x_right_pos'] >= roi_bbox[param['distance']][2]
 
-                print(param['x_left_pos'],roi_bbox[2])
+                # print(param['x_left_pos'],roi_bbox[2])
                 if condition_first or condition_second or condition_third:
                     print(f"!! send braking signal !! : {name} @ distance: {param['distance']}")   
 
@@ -217,15 +222,15 @@ def run():
         traffic_objs = get_traffic_object_info((frame.shape[1], frame.shape[0]), results,model.names,)
 
         # estimating 
-        roi_bbox = find_ROI(f_width, f_height, traffic_objs)
-        print("roi_bbox",roi_bbox)
+        roi_bboxes = find_ROI(f_width, f_height, traffic_objs)
+        print("roi_bbox",roi_bboxes)
 
         # focal_length = focal_length_estimator(frame)
-        trigger_braking_signal(traffic_objs, roi_bbox)
+        trigger_braking_signal(traffic_objs, roi_bboxes)
 
         
         #draw roi in the frame
-        b_frame = plot_ROI(roi_bbox, b_frame)
+        b_frame = plot_ROI(roi_bboxes, b_frame)
 
         end_time = time()
         fps = 1 / round(end_time - start_time, 3) 
