@@ -60,7 +60,8 @@ def run():
         config['confidence'] = CONFIDENCE
         config["object_measured_distance"] = OBJECT_MEASURED_DISTANCE
         config["avg_heights"]["bottle"] = OBJECT_REAL_HEIGHT
-
+        config['img_width'] = image_shape[0]
+        config['img_height'] = image_shape[1]
         #saving updates
         with open(CONFIG_FILE_PATH,"w") as f:
             json.dump(config,f)
