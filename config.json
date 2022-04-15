@@ -1,1 +1,1 @@
-{"avg_heights": {"car": 150, "bike": 55, "bottle": 15}, "object_measured_distance": 24, "focal_length": 222.4, "thresholds": [{"emergency_braking": {"distance": null, "speed": null}, "alert": {"distance": null, "speed": null}}], "confidence": 0.4}
+{"avg_heights": {"car": 150, "bike": 55, "bottle": 15}, "object_measured_distance": 24, "focal_length": 484.8, "thresholds": {"emergency_braking": {"distance": 145, "speed": null}, "alert": {"distance": 200, "speed": null}}, "confidence": 0.4}

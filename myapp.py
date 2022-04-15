@@ -5,6 +5,7 @@ import numpy as np
 from time import time
 import cv2
 import json_loader
+from datetime import datetime
 
 # config
 # FOCAL_LENGTH = 240
@@ -20,7 +21,8 @@ CONFIG_FILE_PATH = "config.json"
 def get_config(file_name):
     config = json_loader.load_config(file_name)
     global FOCAL_LENGTH, AVG_CAR_HEIGHT, AVG_BIKE_HEIGHT,\
-        CONFIDENCE, BOTTLE_HEIGHT, OBJECT_MEASURED_DISTANCE
+        CONFIDENCE, BOTTLE_HEIGHT, OBJECT_MEASURED_DISTANCE,\
+            BRAKING_DISTANCE, ALERT_DISTANCE
 
     FOCAL_LENGTH = config["focal_length"]
     AVG_CAR_HEIGHT = config["avg_heights"]["car"]
@@ -28,6 +30,48 @@ def get_config(file_name):
     CONFIDENCE = config["confidence"]
     BOTTLE_HEIGHT = config["avg_heights"]["bottle"] #INCH
     OBJECT_MEASURED_DISTANCE = config["object_measured_distance"] #INCH
+    ALERT_DISTANCE = config['thresholds']['alert']['distance']
+    BRAKING_DISTANCE = config['thresholds']['emergency_braking']['distance']
+
+
+# def find_ROI(width, height, distance): 
+#     """takes shape of the frame and returns the coordinate of ROI"""
+#     pix_height = (height* 3.2)//distance
+#     pix_width = (width* 3.2)//distance
+
+#     center_x, center_y = width//2 , height//2
+    
+#     print(f"center : {center_x}, {center_y}")
+#     print(f"pix size: {pix_height}, {pix_width}")
+#     print(f"frame: {width, height}")
+#     roi_x1 = center_x - pix_width//2
+#     roi_y1 = center_y - pix_height//2
+
+#     bbox = int(roi_x1), int(roi_y1), int(pix_height), int(pix_width)
+
+#     return bbox
+
+def find_ROI(width, height): 
+    """takes shape of the frame and returns the coordinate of ROI"""
+    bbox = int(width//4), 0, int(2*width//4), height 
+    return bbox
+
+
+
+def plot_ROI(bbox,frame):
+    x, y, w, h = bbox[0], bbox[1], bbox[2], bbox[3]
+  
+    shapes = np.zeros_like(frame, np.uint8)
+
+    cv2.rectangle(shapes, (x,y), (x+w, y+h), (0,0,255), cv2.FILLED)
+    #mask 
+    out = frame.copy()
+    alpha = 0.3
+    mask = shapes.astype(bool)
+    out[mask] = cv2.addWeighted(frame, alpha, shapes, 1 - alpha, 0)[mask]
+
+    return out
+
 
 
 def plot_bounding_box(frame, results, class_names):
@@ -46,17 +90,18 @@ def plot_bounding_box(frame, results, class_names):
 
             color = (0,0,255)
             cv2.rectangle(frame,(x1,y1),(x2,y2),color,2)
-            cv2.putText(frame,label[obj_index],(x1,y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0,255,0),1)
+            cv2.putText(frame,label[obj_index],(x1,y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,0,255),1)
     return frame
 
 
 
 
-def distance_measure(frame_shape, results, class_names):
+def get_traffic_object_info(frame_shape, results, class_names):
     label_index, coord = results.xyxyn[0][:, -1], results.xyxyn[0][:, :-1]
     label = [class_names[int(index)] for index in label_index]
     f_width, f_height = frame_shape
-    distances = []
+    traffic_objs = []
+  
     for obj_index in range(len(label)):
         row  = coord[obj_index]
         if row[4] >= CONFIDENCE:
@@ -67,11 +112,28 @@ def distance_measure(frame_shape, results, class_names):
             # print("----------------FOCAL LENGTH:-------------",FOCAL_LENGTH)
             # coeff = 110 / pix_height
             # print("coeff",coeff)
-            coeff = 1.01
-            distance = (AVG_BIKE_HEIGHT * FOCAL_LENGTH )/(coeff*pix_height)
-            distances.append({label[obj_index] : distance})
-    return distances
+            distance = (AVG_BIKE_HEIGHT * FOCAL_LENGTH )/pix_height
 
+            print(f"{label[obj_index]} distance : {distance}")
+
+            traffic_objs.append({label[obj_index] : {"distance":distance, "x_left_pos": x1, "x_right_pos": x2 }})
+    return traffic_objs
+
+
+def trigger_braking_signal(frame_shape, results, class_names, roi_bbox):
+    traffic_objs = get_traffic_object_info(frame_shape, results, class_names)
+
+    for obj in traffic_objs:
+        for name, param in obj.items():
+            if param['distance'] <= BRAKING_DISTANCE:
+                print("distance",param['distance'])
+                condition_first = param['x_left_pos'] >= roi_bbox[0] and param['x_left_pos'] <= roi_bbox[2]
+                condition_second = param['x_right_pos'] >= roi_bbox[0] and param['x_right_pos'] <= roi_bbox[2]
+                condition_third =param['x_left_pos'] <= roi_bbox[0] and param['x_right_pos'] >= roi_bbox[2]
+
+                print(param['x_left_pos'],roi_bbox[2])
+                if condition_first or condition_second or condition_third:
+                    print(f"!! send braking signal !! : {name} @ distance: {param['distance']}")   
 
 
 def run():
@@ -92,14 +154,21 @@ def run():
     cv2.namedWindow(win_name, cv2.WINDOW_NORMAL)
 
     # writing file
-    # frame_width , frame_height = int(source.get(cv2.CAP_PROP_FRAME_WIDTH)),\
-    #                              int(source.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    f_width , f_height = int(source.get(cv2.CAP_PROP_FRAME_WIDTH)),\
+                                 int(source.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+    # f_width, f_height = (405, 878)
 
     # out = cv2.VideoWriter('outpy.avi',cv2.VideoWriter_fourcc('M','J','P','G'), 10, (frame_width,frame_height)) 
 
+    print(f" shape {f_width} {f_height}")
+    
+    roi_bbox = find_ROI(f_width, f_height)
 
     while cv2.waitKey(1) != 27:
         start_time = time()
+        curr_time = datetime.now().strftime("%H:%M:%S")
+        print(f"================{curr_time}========================")
         ok, frame = source.read()
 
         if not ok:
@@ -113,8 +182,11 @@ def run():
         # draw rectangle bounding box
         b_frame = plot_bounding_box(frame, results, model.names)
         # focal_length = focal_length_estimator(frame)
-        distances = distance_measure((frame.shape[0], frame.shape[1]), results,model.names)
-        print(distances)
+        trigger_braking_signal((frame.shape[1], frame.shape[0]), results,model.names, roi_bbox)
+
+        
+        #draw roi in the frame
+        b_frame = plot_ROI(roi_bbox, b_frame)
 
         end_time = time()
         fps = 1 / round(end_time - start_time, 3) 
