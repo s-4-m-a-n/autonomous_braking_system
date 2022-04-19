@@ -40,30 +40,6 @@ def get_config(file_name):
     AVG_CAR_WIDTH = config['avg_width']['car']
     ROI_OFFSET_DISTANCE = -12 # inch
 
-# def find_ROI(width, height, distance): 
-#     """takes shape of the frame and returns the coordinate of ROI"""
-#     pix_height = (height * 3.2)//distance
-#     pix_width = (width * 3.2)//distance
-
-#     center_x, center_y = width//2 , height//2
-    
-#     print(f"center : {center_x}, {center_y}")
-#     print(f"pix size: {pix_height}, {pix_width}")
-#     print(f"frame: {width, height}")
-#     roi_x1 = center_x - pix_width//2
-#     roi_y1 = center_y - pix_height//2
-
-#     bbox = int(roi_x1), int(roi_y1), int(pix_height), int(pix_width)
-
-#     return bbox
-
-# def get_min_distance_traffic_obj(traffic_objs):
-#     min_distance = 1000 
-#     for obj in traffic_objs:
-#         for name, param in obj.items():
-#             if param["distance"] < min_distance:
-#                 min_distance = param["distance"]
-#     return min_distance 
 
 def find_ROI(f_width, f_height, traffic_objs):
     bboxes = {}
@@ -80,13 +56,6 @@ def find_ROI(f_width, f_height, traffic_objs):
             bboxes[param["distance"]] = bbox
 
     return bboxes
-
-
-
-# def find_ROI(width, height): 
-#     """takes shape of the frame and returns the coordinate (x1y1(top left), x2y2(bottom right)) of ROI"""
-#     bbox = int(width//4), 0, int(2*width//4), height 
-#     return bbox
 
 
 
@@ -184,7 +153,7 @@ def run():
 
     # loading source
     source = cv2.VideoCapture(TEST_VIDEO_PATH)
-    win_name = "yolo v5 obj detection"
+    win_name = "yolov5 autonomous braking system"
     cv2.namedWindow(win_name, cv2.WINDOW_NORMAL)
 
 
@@ -223,7 +192,8 @@ def run():
 
         # estimating 
         roi_bboxes = find_ROI(f_width, f_height, traffic_objs)
-        print("roi_bbox",roi_bboxes)
+
+        print(f"\nroi_bboxes {roi_bboxes}\n")
 
         # focal_length = focal_length_estimator(frame)
         trigger_braking_signal(traffic_objs, roi_bboxes)
