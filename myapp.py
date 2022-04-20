@@ -12,7 +12,7 @@ from colored import fg, bg, attr
 # FOCAL_LENGTH = 240
 # AVG_CAR_HEIGHT = 150
 # AVG_BIKE_HEIGHT = 55 # INCH 120 distance 
-TEST_VIDEO_PATH = "../test videos/101.mp4"
+TEST_VIDEO_PATH = "../test videos/202.mp4"
 CONFIG_FILE_PATH = "config.json"
 # CONFIDENCE = 0.4
 # BOTTLE_HEIGHT = 15 #INCH
@@ -86,17 +86,18 @@ def run():
         frame_counter += 1
         
         color = fg("yellow")  
-        print(color + f"\n\n================{curr_time}  frame: {frame_counter}\
-            =========================================")
+        print(color + f"\n\n================{curr_time} frame: {frame_counter}\
+=========================================")
         print("===============================================================\
-                ======================"+attr("reset"))
+======================"+attr("reset"))
 
         ok, frame = source.read()
-        frame = imutils.resize(frame, width=f_width)
-
+                    
         if not ok:
             print("error")
             break
+        
+        frame = imutils.resize(frame, width=f_width)
 
         # object detection using pretrained model
         # coord is in the form of xmin, ymin, xmax. ymax, confidence
@@ -115,12 +116,13 @@ def run():
                               ROI_OFFSET_DISTANCE, MY_WIDTH)
 
         print(fg(5)+f"\n .......roi_bboxes......\n {roi_bboxes}\n ............\
-                ..................." + attr("reset"))
+..................." + attr("reset"))
 
         trigger_braking_signal(traffic_objs, roi_bboxes)
 
         # draw roi in the frame
-        b_frame = plot_ROI(roi_bboxes, b_frame)
+        if len(roi_bboxes) > 0:
+            b_frame = plot_ROI(roi_bboxes, b_frame)
 
         end_time = time()
         fps = 1 / round(end_time - start_time, 3)

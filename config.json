@@ -5,7 +5,10 @@
      "traffic light": 1000,
      "fire hydrant":50,
      "stop sign":1000,
-     "parking meter": 1000
+     "parking meter": 1000,
+     "cow" : 1000,
+     "train": 1000 
+
 }, 
 
  "avg_width":{
@@ -13,4 +16,4 @@
     "bike":30
  },
 
-    "object_measured_distance": 24, "focal_length": 484.8, "thresholds": {"emergency_braking": {"distance": 120, "speed": null}, "alert": {"distance": 200, "speed": null}}, "confidence": 0.4, "img_width": 405, "img_height": 878}
+    "object_measured_distance": 24, "focal_length": 484.8, "thresholds": {"emergency_braking": {"distance": 120, "speed": null}, "alert": {"distance": 200, "speed": null}}, "confidence": 0.6, "img_width": 405, "img_height": 878}
