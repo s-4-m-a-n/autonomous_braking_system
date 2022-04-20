@@ -1,5 +1,12 @@
 {"avg_heights": 
-    {"car": 150, "bike": 55, "bottle": 15}, 
+    {"car": 150, "bicycle": 55, "motorcycle": 55, "bottle": 15, "person": 69.6,
+     "bus": 300, 
+     "truck": 200,
+     "traffic light": 1000,
+     "fire hydrant":50,
+     "stop sign":1000,
+     "parking meter": 1000
+}, 
 
  "avg_width":{
     "car":69.6,
