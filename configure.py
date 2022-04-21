@@ -2,11 +2,11 @@ import cv2
 import torch
 import json
 # config
-CONFIG_IMAGE_PATH = "config image/test.jpg"
-OBJECT_REAL_HEIGHT = 15 #inch
+CONFIG_IMAGE_PATH = "config image/1.jpg"
+OBJECT_REAL_HEIGHT = 65 #inch
 # OBJECT_REAL_HEIGHT = 3.5 #inch
-OBJECT_MEASURED_DISTANCE = 24 #inch
-CONFIDENCE = 0.4
+OBJECT_MEASURED_DISTANCE = 50*12 #inch
+CONFIDENCE = 0.8
 CONFIG_FILE_PATH = "config.json" 
 
 def get_focal_length(frame_shape, results):
@@ -57,9 +57,9 @@ def run():
 
         # updating config params
         config["focal_length"] = focal_length
-        config['confidence'] = CONFIDENCE
+        # config['confidence'] = CONFIDENCE
         config["object_measured_distance"] = OBJECT_MEASURED_DISTANCE
-        config["avg_heights"]["bottle"] = OBJECT_REAL_HEIGHT
+        # config["avg_heights"]["bottle"] = OBJECT_REAL_HEIGHT
         config['img_width'] = image_shape[0]
         config['img_height'] = image_shape[1]
         #saving updates

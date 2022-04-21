@@ -13,18 +13,29 @@ def find_ROI(f_width, f_height, traffic_objs,
 
             center_x = f_width//2
             roi_x1 = center_x - roi_pix_width//2
-
+#!!!!!!!!!!
             bbox = int(roi_x1), 0, int(roi_pix_width), f_height
             bboxes[param["distance"]] = bbox
 
     return bboxes
 
 
-def plot_ROI(bbox, frame):
-    # plot only the nearest bbox
-    distances = [key for key in bbox.keys()]
-    min_dist = sorted(distances)[0]
-
+def plot_ROI(bbox, closed_objects_dist, frame):
+    
+    if len(closed_objects_dist) > 0:
+        # if there is any closed object then plot ROI of the min_dist closed obj
+        min_dist = min(closed_objects_dist)
+    else:  
+        # else plot ROI for the min dist obj even though that is within the ROI  
+        # plot only the nearest bbox
+        distances = [key for key in bbox.keys()]
+        print(distances)
+        min_dist = min(distances)
+        
+    print("min distance",min_dist)
+    
+    
+    
     x, y, w, h = bbox[min_dist][0], bbox[min_dist][1],\
                  bbox[min_dist][2], bbox[min_dist][3]
   
@@ -40,7 +51,7 @@ def plot_ROI(bbox, frame):
     return out
 
 
-def plot_bounding_box(frame, results, class_names, CONFIDENCE):
+def plot_bounding_boxes(frame, results, class_names, CONFIDENCE):
     
     label_index, coord = results.xyxyn[0][:, -1], results.xyxyn[0][:, :-1]
     label = [class_names[int(index)] for index in label_index]

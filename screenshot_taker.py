@@ -3,9 +3,9 @@ import torch
 from helper import plot_bounding_box
 
 # config
-VIDEO_SOURCE_PATH = "../test videos/202.mp4"
-OUTPUT_IMAGE_PATH = "./config image/202.jpg"
-CONFIDENCE = 0.5
+VIDEO_SOURCE_PATH = "../test videos/1.mp4"
+OUTPUT_IMAGE_PATH = "./config image/1.jpg"
+CONFIDENCE = 0.8
 
 # loading source
 source = cv2.VideoCapture(VIDEO_SOURCE_PATH)
@@ -18,7 +18,7 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 model.to(device)
 
 
-while cv2.waitKey(1) != 27:
+while cv2.waitKey(1) != 27 or cv2.waitKey(1) != 'q':
     ok, frame = source.read()
     if not ok:
         print("error")
@@ -27,7 +27,7 @@ while cv2.waitKey(1) != 27:
     results = model([frame])
 
     # draw rectangle bounding box
-    b_frame = plot_bounding_box(frame, results, model.names, CONFIDENCE)
+    b_frame = plot_bounding_box(frame.copy(), results, model.names, CONFIDENCE)
 
     cv2.imshow(win_name, b_frame)
     print("\n press s or S to take screenshot")
